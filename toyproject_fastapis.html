@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Notice Board</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+        .notice-list-container {
+            flex-grow: 1;
+            overflow-y: auto;
+            max-height: calc(100vh - 200px); /* Adjust based on form height */
+            padding-bottom: 1rem; /* Space for the fixed form */
+        }
+        .input-form-container {
+            position: sticky;
+            bottom: 0;
+            background-color: white;
+            padding: 1rem 0;
+            border-top: 1px solid #dee2e6;
+            z-index: 1000;
+        }
+    </style>
+</head>
+<body>
+    <div class="container mt-3 notice-list-container">
+        <h1 class="mb-4 text-center">Notice Board</h1>
+        <div id="noticeList" class="list-group">
+            <!-- Notices will be loaded here -->
+        </div>
+    </div>
+
+    <div class="input-form-container">
+        <div class="container">
+            <h2 class="mb-3">Post a New Notice</h2>
+            <form id="noticeForm">
+                <div class="mb-3">
+                    <label for="title" class="form-label">Title</label>
+                    <input type="text" class="form-control" id="title" required>
+                </div>
+                <div class="mb-3">
+                    <label for="content" class="form-label">Content</label>
+                    <textarea class="form-control" id="content" rows="3" required></textarea>
+                </div>
+                <button type="submit" class="btn btn-primary">Post Notice</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL" crossorigin="anonymous"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const noticeList = document.getElementById('noticeList');
+            const noticeForm = document.getElementById('noticeForm');
+
+            // Function to load notices
+            async function loadNotices() {
+                try {
+                    const response = await fetch('/api/notices');
+                    const notices = await response.json();
+                    noticeList.innerHTML = ''; // Clear existing notices
+                    if (notices.length === 0) {
+                        noticeList.innerHTML = '<p class="text-center text-muted">No notices yet. Be the first to post one!</p>';
+                    } else {
+                        notices.forEach(notice => {
+                            const noticeItem = document.createElement('div');
+                            noticeItem.classList.add('list-group-item', 'list-group-item-action', 'mb-2', 'rounded');
+                            noticeItem.innerHTML = `
+                                <div class="d-flex w-100 justify-content-between">
+                                    <h5 class="mb-1">${notice.title}</h5>
+                                    <small class="text-muted">${new Date(notice.created_at).toLocaleString()}</small>
+                                </div>
+                                <p class="mb-1">${notice.content}</p>
+                                <button class="btn btn-sm btn-danger mt-2 delete-btn" data-id="${notice.id}">Delete</button>
+                            `;
+                            noticeList.prepend(noticeItem); // Add new notices at the top
+                        });
+                    }
+                } catch (error) {
+                    console.error('Error loading notices:', error);
+                    noticeList.innerHTML = '<p class="text-danger text-center">Failed to load notices.</p>';
+                }
+            }
+
+            // Function to post a new notice
+            noticeForm.addEventListener('submit', async (event) => {
+                event.preventDefault();
+                const title = document.getElementById('title').value;
+                const content = document.getElementById('content').value;
+
+                try {
+                    const response = await fetch('/api/notices', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({ title, content }),
+                    });
+                    if (response.ok) {
+                        document.getElementById('title').value = '';
+                        document.getElementById('content').value = '';
+                        loadNotices(); // Refresh list after posting
+                    } else {
+                        console.error('Failed to post notice:', response.statusText);
+                        alert('Failed to post notice.');
+                    }
+                } catch (error) {
+                    console.error('Error posting notice:', error);
+                    alert('Error posting notice.');
+                }
+            });
+
+            // Function to delete a notice (event delegation)
+            noticeList.addEventListener('click', async (event) => {
+                if (event.target.classList.contains('delete-btn')) {
+                    const noticeId = event.target.dataset.id;
+                    if (confirm('Are you sure you want to delete this notice?')) {
+                        try {
+                            const response = await fetch(`/api/notices/${noticeId}`, {
+                                method: 'DELETE',
+                            });
+                            if (response.ok) {
+                                loadNotices(); // Refresh list after deleting
+                            } else {
+                                console.error('Failed to delete notice:', response.statusText);
+                                alert('Failed to delete notice.');
+                            }
+                        } catch (error) {
+                            console.error('Error deleting notice:', error);
+                            alert('Error deleting notice.');
+                        }
+                    }
+                }
+            });
+
+            // Initial load and auto-refresh
+            loadNotices();
+            setInterval(loadNotices, 3000); // Refresh every 3 seconds
+        });
+    </script>
+</body>
+</html>

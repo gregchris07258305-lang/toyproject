@@ -1,0 +1,30 @@
+## 프롬포트
+
+```python
+{
+  "strategy": "Split into 3 steps for safety (File Creation -> Logic Appending)",
+  "prompts": [
+    {
+      "order": 1,
+      "goal": "DB 모듈 파일 생성 (Create DB Module)",
+      "target_file": "toyproject_fastapis_db.py",
+      "instruction": "이 프롬프트를 입력하여 DB 연결 파일을 먼저 만드세요.",
+      "prompt_content": "Create a new file named 'toyproject_fastapis_db.py' in the current directory. The content must be exactly as follows, utilizing psycopg2 for PostgreSQL connection as per the constraints:\n\n```python\nimport psycopg2\nfrom typing import Optional\n\ndef get_db_connection():\n    # Database connection settings\n    DB_HOST: Optional[str] = \"db_postgresql\"\n    DB_PORT: Optional[str] = \"5432\"\n    POSTGRES_DB: Optional[str] = \"main_db\"\n    POSTGRES_USER: Optional[str] = \"admin\"\n    POSTGRES_PASSWORD: Optional[str] = \"admin123\"\n    conn = psycopg2.connect(\n        host=DB_HOST,\n        port=DB_PORT,\n        dbname=POSTGRES_DB,\n        user=POSTGRES_USER,\n        password=POSTGRES_PASSWORD\n    )\n    return conn\n```"
+    },
+    {
+      "order": 2,
+      "goal": "프론트엔드 HTML 파일 생성 (Create Frontend)",
+      "target_file": "toyproject_fastapis.html",
+      "instruction": "이 프롬프트를 입력하여 UI 파일을 만드세요.",
+      "prompt_content": "Create a new file named 'toyproject_fastapis.html'. \n\nRequirements:\n1. Use Bootstrap 5 for styling.\n2. Structure: Notice list area at the top (scrollable), Input form area at the bottom (fixed).\n3. JavaScript: Implement 'loadNotices' (Fetch GET /api/notices), 'postNotice' (Fetch POST /api/notices), and 'deleteNotice' (Fetch DELETE). Auto-refresh the list every 3 seconds.\n4. Design: Clean, modern, and responsive."
+    },
+    {
+      "order": 3,
+      "goal": "메인 로직 추가 (Append Backend Logic)",
+      "target_file": "main.py",
+      "instruction": "가장 중요한 단계입니다. 기존 코드를 지우지 않고 뒤에 내용을 추가합니다.",
+      "prompt_content": "Edit 'main.py'. **DO NOT DELETE ANY EXISTING CODE.**\n\nAppend the following functionality to the end of the file:\n1. Import `get_db_connection` from `toyproject_fastapis_db`.\n2. Import `FastAPI`, `Request`, `Jinja2Templates`, `JSONResponse`, `BaseModel` if they are not already imported.\n3. Configure Jinja2Templates to point to the current directory.\n4. Add a startup event to create the 'notices' table (id, content, created_at) if it doesn't exist.\n5. Add the following routes specifically for the notice board:\n   - GET '/' rendering 'toyproject_fastapis.html'.\n   - GET '/api/notices' returning JSON list.\n   - POST '/api/notices' to insert data.\n   - DELETE '/api/notices/{id}' to delete data.\nEnsure variable names do not conflict with existing code."
+    }
+  ]
+}
+```
